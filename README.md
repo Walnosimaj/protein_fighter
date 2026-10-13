@@ -299,11 +299,6 @@ be left out, and the other fighter is then whoever the title screen has picked.
 
 So: name any two proteins, and there is a link that sets them fighting.
 
-The fork also gives every fighter the same universal gear, whatever protein it is:
-a red boxing glove over each fist and a plain sneaker over each foot, drawn over
-the posed chain each frame. The striking ends no longer have to be bare protein;
-hits land exactly as before.
-
 ## Files
 
 - `index.html` — page, HUD, styles
