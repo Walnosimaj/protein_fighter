@@ -281,6 +281,29 @@ orientation, the arm search, the helix legs, the floating body and the signature
 were his; what stands now reads through py2Dmol, finds a whole armature and grows the
 rest from the chain, and fights with the game's own specials.
 
+## Link-to-fight (Walnosimaj fork addition)
+
+A whole fight can be named in the address, so a matchup is a link:
+
+```
+index.html?p1=P42212&p2=P69905
+```
+
+Each of `p1` and `p2` takes anything the custom panel takes: a PDB id (chains after
+the four characters, as in `1TIM_A`), or a UniProt accession for its AlphaFold DB
+model. Both proteins are fetched, rigged and installed, and the fight starts on its
+own — you play P1 against the CPU. `&mode=2` makes it two players on one keyboard;
+`&go=0` loads both fighters and waits on the title screen instead of starting. A bad
+id is reported in a banner at the top of the page and nothing starts. Either side may
+be left out, and the other fighter is then whoever the title screen has picked.
+
+So: name any two proteins, and there is a link that sets them fighting.
+
+The fork also gives every fighter the same universal gear, whatever protein it is:
+a red boxing glove over each fist and a plain sneaker over each foot, drawn over
+the posed chain each frame. The striking ends no longer have to be bare protein;
+hits land exactly as before.
+
 ## Files
 
 - `index.html` — page, HUD, styles
