@@ -790,6 +790,90 @@
       coords: a.coords.concat(b.coords),
       plddts: plddtBuf,
     }, 'arena');
+    drawGear();
+  }
+
+  // ------------------------------------------------- fork addition: gloves and shoes
+  // Universal gear, the same for every fighter whatever protein it is: a red boxing
+  // glove over each fist and a plain shoe over each foot, drawn on the effects
+  // canvas (which sits over the proteins) from the posed coordinates each frame, so
+  // the striking ends read as gloved hands and shod feet rather than bare chain.
+  // Purely visual: hits land exactly as before, and the chain still shows between
+  // the cuff and the body. Added for the Walnosimaj fork, at the owner's request.
+  function drawGear() {
+    const canvas = $('fx'); if (!canvas) return;
+    const W = canvas.clientWidth, H = canvas.clientHeight; if (!W || !H) return;
+    const dpr = Math.min(1.5, devicePixelRatio || 1);
+    if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const { scale, project } = view();
+    const TAU = Math.PI * 2;
+    const glove = (tip, wrist) => {
+      const [X, Y, c] = project(tip[0], tip[1], tip[2]);
+      const [WX, WY] = project(wrist[0], wrist[1], wrist[2]);
+      const r = 8.5 * scale * c; if (!(r > 2)) return;
+      let a = Math.atan2(Y - WY, X - WX); if (!Number.isFinite(a)) a = 0;   // pointing away from the wrist, along the arm
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(a);
+      ctx.lineWidth = Math.max(1, r * 0.09); ctx.strokeStyle = 'rgba(60,25,15,0.55)';
+      ctx.fillStyle = '#f3ead8';   // the cuff
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(-r * 1.3, -r * 0.52, r * 0.66, r * 1.04, r * 0.18); else ctx.rect(-r * 1.3, -r * 0.52, r * 0.66, r * 1.04);
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(140,45,32,0.85)'; ctx.lineWidth = Math.max(1, r * 0.07);   // the cuff's laces
+      ctx.beginPath(); ctx.moveTo(-r * 1.12, -r * 0.3); ctx.lineTo(-r * 0.84, r * 0.3); ctx.moveTo(-r * 0.84, -r * 0.3); ctx.lineTo(-r * 1.12, r * 0.3); ctx.stroke();
+      ctx.fillStyle = '#cf3527'; ctx.strokeStyle = 'rgba(60,25,15,0.55)'; ctx.lineWidth = Math.max(1, r * 0.09);   // the mitten
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.05, r * 0.88, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(r * 0.16, r * 0.6, r * 0.44, r * 0.3, 0.5, 0, TAU); ctx.fill(); ctx.stroke();   // the thumb
+      ctx.restore();
+    };
+    const shoe = (foot, heel, toe, facing) => {
+      const [X, Y, c] = project(foot[0], foot[1], foot[2]);
+      const L = 16 * scale * c; if (!(L > 4)) return;
+      let a = 0;
+      if (heel && toe) {
+        // Tilt with the foot itself, heel to toe, kept within half a radian of level:
+        // standing feet sit flat, a kicked foot points with its shoe.
+        const [HX, HY] = project(heel[0], heel[1], heel[2]);
+        const [TX, TY] = project(toe[0], toe[1], toe[2]);
+        let phi = Math.atan2(TY - HY, TX - HX) - (facing < 0 ? Math.PI : 0);
+        while (phi > Math.PI) phi -= TAU; while (phi < -Math.PI) phi += TAU;
+        a = Math.max(-0.5, Math.min(0.5, phi));
+      }
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(a); ctx.scale(facing, 1);
+      ctx.lineWidth = Math.max(1, L * 0.045); ctx.strokeStyle = 'rgba(35,35,45,0.6)';
+      ctx.fillStyle = '#565b66';   // the sole
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(-L * 0.52, -L * 0.09, L * 1.06, L * 0.11, L * 0.05); else ctx.rect(-L * 0.52, -L * 0.09, L * 1.06, L * 0.11);
+      ctx.fill();
+      ctx.fillStyle = '#eceef2';   // the upper: heel collar, tongue and toe in one plain sneaker shape
+      ctx.beginPath();
+      ctx.moveTo(-L * 0.5, -L * 0.08);
+      ctx.lineTo(-L * 0.46, -L * 0.36);
+      ctx.quadraticCurveTo(-L * 0.44, -L * 0.44, -L * 0.34, -L * 0.43);
+      ctx.lineTo(-L * 0.16, -L * 0.4);
+      ctx.quadraticCurveTo(-L * 0.02, -L * 0.26, L * 0.16, -L * 0.2);
+      ctx.quadraticCurveTo(L * 0.38, -L * 0.13, L * 0.52, -L * 0.08);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(90,95,110,0.9)'; ctx.lineWidth = Math.max(1, L * 0.035);   // the laces
+      for (let k = 0; k < 3; k++) { const lx = -L * (0.2 - k * 0.11), ly = -L * (0.33 - k * 0.045); ctx.beginPath(); ctx.moveTo(lx - L * 0.05, ly + L * 0.045); ctx.lineTo(lx + L * 0.05, ly - L * 0.045); ctx.stroke(); }
+      ctx.restore();
+    };
+    for (const f of fighters) {
+      const C = f.coords, F = f.form; if (!C || !F) continue;
+      if (F.fist && F.fist.length) glove(C[F.fist[F.fist.length - 1]], C[F.fist[0]]);
+      if (F.fistL && F.fistL.length) glove(C[F.fistL[F.fistL.length - 1]], C[F.fistL[0]]);
+      for (const side of ['lleg', 'rleg']) {
+        const footIdx = (F.rig.domains && F.rig.domains[side + '_foot']) || [];
+        if (!footIdx.length) continue;
+        let ax = 0, ay = Infinity, az = 0;
+        for (const i of footIdx) { const q = C[i]; if (!q) continue; ax += q[0]; az += q[2]; if (q[1] < ay) ay = q[1]; }
+        const heel = C[footIdx[0]];
+        let toe = heel, far = -1;   // the toe: the foot's far end from the heel, across the floor plane
+        for (const i of footIdx) { const q = C[i]; if (!q || !heel) continue; const d = (q[0] - heel[0]) ** 2 + (q[2] - heel[2]) ** 2; if (d > far) { far = d; toe = q; } }
+        shoe([ax / footIdx.length, ay, az / footIdx.length], heel, toe, f.facing || 1);
+      }
+    }
   }
 
   // ------------------------------------------------------------------- the match
@@ -2451,4 +2535,43 @@
     overlay('RENDERER UNAVAILABLE', String(e && e.message || e), 'RELOAD');
     $('go').onclick = () => location.reload();
   }
+
+  // ------------------------------------------------- fork addition: link-to-fight
+  // A fight named in the address: ?p1=<id>&p2=<id>, each id as the custom panel
+  // takes it (a PDB id, chains after it as in 1TIM_A, or a UniProt accession for
+  // the AlphaFold DB). Both fighters are fetched, rigged and installed as if
+  // chosen at the panel, and the fight starts on its own; &mode=2 makes it two
+  // players on one keyboard (the default is one player against the CPU), and
+  // &go=0 loads the fighters and stays on the title screen. A bad id says so in
+  // the banner and leaves the title screen standing. Added for the Walnosimaj
+  // fork: name two proteins, get a link, watch them fight.
+  (async () => {
+    const q = new URLSearchParams(location.search);
+    const ids = [q.get('p1'), q.get('p2')];
+    if (!ids[0] && !ids[1]) return;
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;padding:8px 14px;background:#111;color:#eee;border:2px solid #eee;border-radius:6px;font:12px monospace;text-align:center;max-width:90vw';
+    document.body.appendChild(banner);
+    const say = (t, bad) => { banner.textContent = t; banner.style.borderColor = bad ? '#e55' : '#eee'; banner.style.color = bad ? '#f88' : '#eee'; };
+    const loaded = [];
+    for (let i = 0; i < 2; i++) {
+      if (!ids[i]) continue;
+      try {
+        say(`fetching P${i + 1}: ${ids[i].toUpperCase()}…`);
+        const got = await window.CustomPdb.fetchStructure(ids[i]);
+        say(`rigging ${got.name}…`);
+        const res = window.CustomPdb.buildCustomFighter(got.name, got.text, { pae: got.pae || null });
+        installCustom(customWire(res), i);
+        pick[i] = 'custom' + i;
+        loaded.push(res.name);
+      } catch (err) { say(`P${i + 1} (${ids[i].toUpperCase()}): ${err.message}`, true); return; }
+    }
+    showPicks();
+    const wantMode = q.get('mode') === '2' ? 2 : 1;
+    const btn = document.querySelector(`[data-players="${wantMode}"]`);
+    if (btn && mode !== wantMode) btn.click();
+    if (q.get('go') === '0') { say(`loaded: ${loaded.join(' vs ')} — press start when ready`); return; }
+    banner.remove();
+    start(wantMode);
+  })();
 })();
