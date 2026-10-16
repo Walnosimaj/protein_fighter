@@ -11,11 +11,11 @@
   // can only get this far apart (torso to torso), which is where the screen's edge
   // becomes the wall once the camera has pulled back as far as it goes.
   const MAX_GAP = 300;
-  const WALK = 130, JUMP_V = 905, JUMP_VX = 260, GRAVITY = 2400, FRICTION = 9;
+  const WALK = 130, JUMP_V = 1050, JUMP_VX = 280, GRAVITY = 2400, FRICTION = 9;
   // Jumps: a knee bend to push off, falling faster than rising, a little air drag,
   // letting go of up early cuts it to a short hop, and the knees soak up the landing.
-  // The torso rides the arc and the legs tuck up under it. A standing fighter's torso tops out around 93 Å, so the full jump's ~170 Å arc sails clean over the other fighter, while a short hop (~72 Å) stays a hop and cannot clear them.
-  const SQUAT = 0.07, FALL_BOOST = 1.35, AIR_DRAG = 0.4, SHORT_HOP = 0.65, LANDING = 0.2;
+  // The torso rides the arc and the legs tuck up under it. A standing fighter's torso tops out around 93 Å (big proteins more), so the jump clears with room to spare: ~230 Å held, and even a tapped short hop reaches ~166 Å.
+  const SQUAT = 0.07, FALL_BOOST = 1.35, AIR_DRAG = 0.4, SHORT_HOP = 0.85, LANDING = 0.2;
   // Street Fighter style: punch or kick, standing, crouching (low) or in the air.
   // push: knockback speed in Å/s, slid out by ground friction.
   // low: it unfolds only the legs. air: can only be thrown while airborne.
